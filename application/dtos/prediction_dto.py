@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-from ...domain.entities.prediction import FrostLevel, PredictionModel
+from domain.entities.prediction import FrostLevel, PredictionModel
 
 
 class PredictionDTO(BaseModel):

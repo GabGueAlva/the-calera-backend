@@ -1,8 +1,8 @@
 from typing import List
 
-from ...domain.entities.sensor_data import SensorData
-from ...domain.repositories.sensor_data_repository import SensorDataRepository
-from ...domain.value_objects.time_range import TimeRange
+from domain.entities.sensor_data import SensorData
+from domain.repositories.sensor_data_repository import SensorDataRepository
+from domain.value_objects.time_range import TimeRange
 from ..external.tts_client import TTSClient
 
 

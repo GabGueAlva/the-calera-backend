@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from typing import List, Dict, Any
 import httpx
 
-from ...domain.entities.sensor_data import SensorData
-from ...domain.value_objects.time_range import TimeRange
+from domain.entities.sensor_data import SensorData
+from domain.value_objects.time_range import TimeRange
 from ..config.settings import settings
 
 

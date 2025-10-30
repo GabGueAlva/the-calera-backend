@@ -4,12 +4,14 @@ from datetime import datetime
 import asyncio
 
 from application.services.prediction_service import PredictionService
+from application.services.sensor_data_service import SensorDataService
 from infrastructure.config.settings import settings
 
 
 class FrostPredictionScheduler:
-    def __init__(self, prediction_service: PredictionService):
+    def __init__(self, prediction_service: PredictionService, sensor_data_service: SensorDataService = None):
         self.prediction_service = prediction_service
+        self.sensor_data_service = sensor_data_service
         self.scheduler = AsyncIOScheduler()
 
     async def run_prediction_job(self):
@@ -27,6 +29,14 @@ class FrostPredictionScheduler:
             print("Daily alert sent successfully")
         except Exception as e:
             print(f"Error sending daily alert: {e}")
+
+    async def update_sensor_data_job(self):
+        """Update cached sensor data from TTS"""
+        try:
+            if self.sensor_data_service:
+                await self.sensor_data_service.update_cached_sensor_data()
+        except Exception as e:
+            print(f"Error updating sensor data: {e}")
 
     def start(self):
         # Schedule prediction jobs at 3:00 AM, 12:00 PM, and 4:00 PM
@@ -54,7 +64,16 @@ class FrostPredictionScheduler:
             CronTrigger(hour=17, minute=0),
             id="daily_alert_5pm"
         )
-        
+
+        # Schedule sensor data updates every 5 minutes
+        if self.sensor_data_service:
+            self.scheduler.add_job(
+                self.update_sensor_data_job,
+                CronTrigger(minute="*/5"),  # Every 5 minutes
+                id="sensor_data_update"
+            )
+            print("Sensor data updates scheduled every 5 minutes")
+
         self.scheduler.start()
         print("Scheduler started successfully")
 

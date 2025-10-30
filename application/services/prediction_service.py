@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from ..use_cases.generate_frost_prediction import GenerateFrostPredictionUseCase
 from ..use_cases.send_frost_alert import SendFrostAlertUseCase
@@ -13,6 +13,8 @@ class PredictionService:
     ):
         self.generate_prediction_use_case = generate_prediction_use_case
         self.send_alert_use_case = send_alert_use_case
+        # Expose repository for test endpoint
+        self.prediction_repository = generate_prediction_use_case.prediction_repository
 
     async def generate_prediction(self) -> PredictionDTO:
         prediction = await self.generate_prediction_use_case.execute()
@@ -26,5 +28,5 @@ class PredictionService:
             lstm_probability=prediction.lstm_probability,
         )
 
-    async def send_daily_alert(self) -> None:
-        await self.send_alert_use_case.execute()
+    async def send_daily_alert(self, phone_numbers: List[str]) -> None:
+        await self.send_alert_use_case.execute(phone_numbers)
