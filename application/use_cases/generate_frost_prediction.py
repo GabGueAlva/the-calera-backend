@@ -44,9 +44,9 @@ class GenerateFrostPredictionUseCase:
         lstm_probability = await self.lstm_service.predict_frost_probability(sensor_data)
         print(f"[PREDICTION] ✓ LSTM probability: {lstm_probability:.2%}\n")
 
-        hybrid_probability = (sarima_probability * 0.5) + (lstm_probability * 0.5)
+        hybrid_probability = (sarima_probability * 0.4) + (lstm_probability * 0.6)
         print("[PREDICTION] Step 4: Calculating hybrid prediction...")
-        print(f"[PREDICTION] Hybrid formula: (SARIMA * 0.5) + (LSTM * 0.5)")
+        print(f"[PREDICTION] Hybrid formula: (SARIMA * 0.4) + (LSTM * 0.6)")
         print(f"[PREDICTION] ✓ Hybrid probability: {hybrid_probability:.2%}\n")
 
         frost_level = Prediction.determine_frost_level(hybrid_probability)

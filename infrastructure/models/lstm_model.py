@@ -139,7 +139,7 @@ class LSTMModelService(MLModelService):
 
         self.model = self._build_model()
         print(f"[LSTM] Model architecture built")
-        print(f"[LSTM] Starting training with 50 epochs (this will take 2-3 minutes)...")
+        print(f"[LSTM] Starting training with 50 epochs")
         print("-"*60)
 
         try:
@@ -159,7 +159,7 @@ class LSTMModelService(MLModelService):
 
             self.model.fit(
                 X, y,
-                epochs=50,  # Full training for better accuracy, cached after first run
+                epochs=50, 
                 batch_size=32,
                 validation_split=0.2,
                 callbacks=[epoch_callback, early_stopping],

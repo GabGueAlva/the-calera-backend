@@ -124,7 +124,7 @@ The system automatically runs:
 
 ### Hybrid Fusion
 - Combines SARIMA and LSTM predictions
-- Simple weighted average (50% each)
+- Weighted average (LSTM 60%, SARIMA 40%)
 - Provides final frost probability
 
 ## Development
