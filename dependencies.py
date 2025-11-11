@@ -1,4 +1,3 @@
-import os
 from application.services.prediction_service import PredictionService
 from application.services.farmer_service import FarmerService
 from application.services.sensor_data_service import SensorDataService
@@ -17,6 +16,7 @@ from infrastructure.repositories.json_farmer_repository import JSONFarmerReposit
 from infrastructure.database.postgres_database import PostgresSensorDatabase
 from infrastructure.models.sarima_model import SARIMAModelService
 from infrastructure.models.lstm_model import LSTMModelService
+from infrastructure.config.settings import settings
 
 from interfaces.controllers.webhook_controller import WebhookController
 from interfaces.controllers.prediction_controller import PredictionController
@@ -33,12 +33,11 @@ class DependencyContainer:
         self.twilio_client = TwilioWhatsAppClient()
 
         # Database - Always use PostgreSQL (Supabase)
-        database_url = os.getenv("DATABASE_URL")
-        if not database_url:
+        if not settings.database_url:
             raise ValueError("DATABASE_URL environment variable is required. Please set it to your PostgreSQL connection string.")
 
         print("[DATABASE] Using PostgreSQL database from DATABASE_URL")
-        self.sensor_database = PostgresSensorDatabase(database_url=database_url)
+        self.sensor_database = PostgresSensorDatabase(database_url=settings.database_url)
 
         # Repositories
         # Use database repository for sensor data storage
