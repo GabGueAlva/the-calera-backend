@@ -23,8 +23,9 @@ class WebhookController:
             # Extract device ID
             device_id = payload.get("end_device_ids", {}).get("device_id", "unknown")
 
-            # Filter for Node 7 only (additional safety check)
-            if device_id != "nodo-lora-ud-7":
+            # Filter for Nodes 1, 6, and 7 only (additional safety check)
+            allowed_nodes = ["nodo-lora-ud-1", "nodo-lora-ud-6", "nodo-lora-ud-7"]
+            if device_id not in allowed_nodes:
                 print(f"Ignoring webhook from device: {device_id}")
                 return WebhookResponse(
                     status="ignored",
@@ -58,7 +59,7 @@ class WebhookController:
             if self.sensor_repository:
                 self.sensor_repository.save_sensor_data(sensor_data)
                 print(f"\n{'='*60}")
-                print(f"✓ NODE 7 DATA SAVED TO DATABASE at {received_at}")
+                print(f"✓ {device_id.upper()} DATA SAVED TO DATABASE at {received_at}")
                 print(f"{'='*60}")
                 print(f"Temperature: {temperature}°C")
                 print(f"Humidity: {humidity}%")
@@ -72,7 +73,7 @@ class WebhookController:
 
             return WebhookResponse(
                 status="success",
-                message=f"Node 7 data received and processed successfully",
+                message=f"{device_id} data received and processed successfully",
                 timestamp=datetime.utcnow().isoformat()
             )
 
