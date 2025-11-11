@@ -20,12 +20,13 @@ class DatabaseSensorDataRepository(SensorDataRepository):
             time_range: Time range to query
 
         Returns:
-            List of SensorData objects
+            List of SensorData objects from all configured nodes (1, 6, and 7)
         """
+        # Get data from all nodes instead of filtering for just node 7
         return self.database.get_sensor_data_in_range(
             start_time=time_range.start,
             end_time=time_range.end,
-            device_id="nodo-lora-ud-7"  # Filter for Node 7 only
+            device_id=None  # Get data from all nodes
         )
 
     def save_sensor_data(self, sensor_data: SensorData) -> None:
