@@ -19,50 +19,89 @@ class TTSClient:
     async def get_sensor_data_in_range(self, time_range: TimeRange) -> List[SensorData]:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
+            "Accept": "text/event-stream",
         }
 
+        # Calculate hours between start and end time
+        time_diff = time_range.end - time_range.start
+        hours = int(time_diff.total_seconds() / 3600)
+
+        # TTS Storage API uses "last" parameter with format like "240h" for 240 hours
+        # Maximum is typically limited by the storage retention policy
         params = {
-            "field_mask": "up.uplink_message.decoded_payload,up.uplink_message.received_at,end_device_ids.device_id",
-            "after": time_range.start.replace(tzinfo=timezone.utc).isoformat(),
-            "before": time_range.end.replace(tzinfo=timezone.utc).isoformat(),
-            "limit": 10000,
+            "last": f"{hours}h",
         }
 
-        url = f"{self.base_url}/api/v3/as/applications/{self.application_id}/packages/storage/{self.storage_integration_id}/uplink_message"
+        print(f"[TTS] Requesting last {hours} hours of data ({hours/24:.1f} days)")
 
-        async with httpx.AsyncClient() as client:
+        url = f"{self.base_url}/api/v3/as/applications/{self.application_id}/packages/storage/uplink_message"
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
             try:
                 response = await client.get(url, headers=headers, params=params)
                 response.raise_for_status()
-                
-                data = response.json()
+
+                # Parse event-stream response (each line is a JSON object)
                 sensor_data_list = []
-                
-                for message in data.get("result", {}).get("uplink_messages", []):
+                response_text = response.text
+
+                # Split by lines and parse each JSON event
+                for line in response_text.strip().split('\n'):
+                    if not line.strip():
+                        continue
+
                     try:
-                        payload = message.get("up", {}).get("uplink_message", {}).get("decoded_payload", {})
-                        received_at = message.get("up", {}).get("uplink_message", {}).get("received_at")
-                        device_id = message.get("up", {}).get("uplink_message", {}).get("end_device_ids", {}).get("device_id")
-                        
+                        # Parse JSON line
+                        message = json.loads(line)
+
+                        # Extract data from the message structure
+                        result = message.get("result", {})
+                        uplink_message = result.get("uplink_message", {})
+
+                        payload = uplink_message.get("decoded_payload", {})
+                        received_at = uplink_message.get("received_at")
+                        end_device_ids = result.get("end_device_ids", {})
+                        device_id = end_device_ids.get("device_id")
+
                         if not all([payload, received_at, device_id]):
                             continue
-                            
+
+                        # Filter for Node 7 only
+                        if device_id != "nodo-lora-ud-7":
+                            continue
+
                         timestamp = datetime.fromisoformat(received_at.replace("Z", "+00:00"))
-                        
+
+                        # Handle both Spanish and English field names
+                        temperature = payload.get("temperatura_c", payload.get("temperature", 0.0))
+                        humidity = payload.get("humedad_pct", payload.get("humidity", 0.0))
+                        wind_speed = payload.get("viento_ms", payload.get("wind_speed", 0.0))
+
                         sensor_data = SensorData(
-                            temperature=payload.get("temperature", 0.0),
-                            humidity=payload.get("humidity", 0.0),
-                            wind_speed=payload.get("wind_speed", 0.0),
+                            temperature=temperature,
+                            humidity=humidity,
+                            wind_speed=wind_speed,
                             timestamp=timestamp,
                             device_id=device_id,
                         )
                         sensor_data_list.append(sensor_data)
-                        
+
                     except Exception as e:
                         print(f"Error parsing sensor data: {e}")
                         continue
-                
+
+                # Log all fetched data
+                print(f"\n{'='*80}")
+                print(f"[TTS] Fetched {len(sensor_data_list)} data points from Node 7")
+                print(f"{'='*80}")
+                if sensor_data_list:
+                    print(f"First data point: {sensor_data_list[0].timestamp} - Temp: {sensor_data_list[0].temperature}°C")
+                    print(f"Last data point:  {sensor_data_list[-1].timestamp} - Temp: {sensor_data_list[-1].temperature}°C")
+                    print(f"\nAll temperature readings:")
+                    for i, data in enumerate(sensor_data_list, 1):
+                        print(f"  {i:3d}. {data.timestamp} | Temp: {data.temperature:5.1f}°C | Humidity: {data.humidity:5.1f}% | Wind: {data.wind_speed:5.1f} m/s")
+                print(f"{'='*80}\n")
+
                 return sensor_data_list
                 
             except httpx.HTTPStatusError as e:

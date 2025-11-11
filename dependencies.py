@@ -7,13 +7,13 @@ from application.use_cases.register_farmer import RegisterFarmerUseCase
 from application.use_cases.get_all_farmers import GetAllFarmersUseCase
 
 from infrastructure.external.tts_client import TTSClient
-from infrastructure.external.mock_tts_client import MockTTSClient
 from infrastructure.external.twilio_client import TwilioWhatsAppClient
-from infrastructure.external.mock_twilio_client import MockTwilioWhatsAppClient
 from infrastructure.external.twilio_notification_service import TwilioNotificationService
 from infrastructure.repositories.tts_sensor_data_repository import TTSSensorDataRepository
+from infrastructure.repositories.database_sensor_data_repository import DatabaseSensorDataRepository
 from infrastructure.repositories.memory_prediction_repository import MemoryPredictionRepository
 from infrastructure.repositories.json_farmer_repository import JSONFarmerRepository
+from infrastructure.database.database import SensorDatabase
 from infrastructure.models.sarima_model import SARIMAModelService
 from infrastructure.models.lstm_model import LSTMModelService
 
@@ -25,16 +25,18 @@ from interfaces.controllers.farmer_controller import FarmerController
 class DependencyContainer:
     def __init__(self):
         # External services
-        # Use MockTTSClient for testing when TTS is not configured
-        # Change to TTSClient() when you have real TTS credentials
-        self.tts_client = MockTTSClient()  # Change to TTSClient() for production
+        # Using real TTS client with configured credentials
+        self.tts_client = TTSClient()
 
-        # Use MockTwilioWhatsAppClient for testing when Twilio is not configured
-        # Change to TwilioWhatsAppClient() when you have real Twilio credentials
-        self.twilio_client = TwilioWhatsAppClient()  # Real Twilio client for production
-        
+        # Using real Twilio client for WhatsApp notifications
+        self.twilio_client = TwilioWhatsAppClient()
+
+        # Database
+        self.sensor_database = SensorDatabase(db_path="data/sensor_data.db")
+
         # Repositories
-        self.sensor_data_repository = TTSSensorDataRepository(self.tts_client)
+        # Use database repository for sensor data storage
+        self.sensor_data_repository = DatabaseSensorDataRepository(self.sensor_database)
         self.prediction_repository = MemoryPredictionRepository()
         self.farmer_repository = JSONFarmerRepository()  # Stores farmers in data/farmers.json
         
@@ -83,7 +85,9 @@ class DependencyContainer:
         )
 
         # Controllers
-        self.webhook_controller = WebhookController()
+        self.webhook_controller = WebhookController(
+            sensor_repository=self.sensor_data_repository  # Inject database repository to save webhook data
+        )
         self.prediction_controller = PredictionController(
             self.prediction_service,
             self.sensor_data_service,  # Inject sensor data service

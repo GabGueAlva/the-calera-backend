@@ -30,11 +30,6 @@ class PredictionController:
             status_code=200
         )
         self.router.add_api_route(
-            "/test/create-mock-prediction",
-            self.create_mock_prediction,
-            methods=["POST"]
-        )
-        self.router.add_api_route(
             "/sensor-data",
             self.get_sensor_data,
             methods=["GET"],
@@ -87,43 +82,6 @@ class PredictionController:
             raise
         except Exception as e:
             print(f"Error sending alert: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
-
-    async def create_mock_prediction(self) -> dict:
-        """
-        TEST ENDPOINT: Create a mock prediction for testing the alert system.
-        This bypasses the ML models and creates a fake prediction.
-        """
-        try:
-            from datetime import datetime
-            from domain.entities.prediction import Prediction, PredictionModel, FrostLevel
-
-            # Create a mock prediction
-            mock_prediction = Prediction(
-                probability=0.45,  # 45% frost probability
-                frost_level=FrostLevel.POSSIBLE_FROST,
-                model_type=PredictionModel.HYBRID,
-                created_at=datetime.utcnow(),
-                sarima_probability=0.35,
-                lstm_probability=0.55,
-            )
-
-            # Save it to the repository
-            await self.prediction_service.prediction_repository.save_prediction(mock_prediction)
-
-            print(f"[TEST] Mock prediction created with {mock_prediction.probability:.1%} probability")
-
-            return {
-                "status": "success",
-                "message": "Mock prediction created for testing",
-                "prediction": {
-                    "probability": mock_prediction.probability,
-                    "frost_level": mock_prediction.frost_level.value,
-                    "created_at": mock_prediction.created_at.isoformat()
-                }
-            }
-        except Exception as e:
-            print(f"Error creating mock prediction: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def get_sensor_data(self) -> LatestSensorDataResponse:
