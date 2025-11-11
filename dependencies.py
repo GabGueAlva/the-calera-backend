@@ -14,7 +14,6 @@ from infrastructure.repositories.tts_sensor_data_repository import TTSSensorData
 from infrastructure.repositories.database_sensor_data_repository import DatabaseSensorDataRepository
 from infrastructure.repositories.memory_prediction_repository import MemoryPredictionRepository
 from infrastructure.repositories.json_farmer_repository import JSONFarmerRepository
-from infrastructure.database.database import SensorDatabase
 from infrastructure.database.postgres_database import PostgresSensorDatabase
 from infrastructure.models.sarima_model import SARIMAModelService
 from infrastructure.models.lstm_model import LSTMModelService
@@ -33,14 +32,13 @@ class DependencyContainer:
         # Using real Twilio client for WhatsApp notifications
         self.twilio_client = TwilioWhatsAppClient()
 
-        # Database - Use PostgreSQL if DATABASE_URL is available (Railway), otherwise SQLite (local)
+        # Database - Always use PostgreSQL (Supabase)
         database_url = os.getenv("DATABASE_URL")
-        if database_url:
-            print("[DATABASE] Using PostgreSQL database from DATABASE_URL")
-            self.sensor_database = PostgresSensorDatabase(database_url=database_url)
-        else:
-            print("[DATABASE] Using SQLite database (local development)")
-            self.sensor_database = SensorDatabase(db_path="data/sensor_data.db")
+        if not database_url:
+            raise ValueError("DATABASE_URL environment variable is required. Please set it to your PostgreSQL connection string.")
+
+        print("[DATABASE] Using PostgreSQL database from DATABASE_URL")
+        self.sensor_database = PostgresSensorDatabase(database_url=database_url)
 
         # Repositories
         # Use database repository for sensor data storage
