@@ -66,8 +66,9 @@ class TTSClient:
                         if not all([payload, received_at, device_id]):
                             continue
 
-                        # Filter for Node 7 only
-                        if device_id != "nodo-lora-ud-7":
+                        # Filter for Nodes 1, 6, and 7 only
+                        allowed_nodes = ["nodo-lora-ud-1", "nodo-lora-ud-6", "nodo-lora-ud-7"]
+                        if device_id not in allowed_nodes:
                             continue
 
                         timestamp = datetime.fromisoformat(received_at.replace("Z", "+00:00"))
@@ -92,14 +93,14 @@ class TTSClient:
 
                 # Log all fetched data
                 print(f"\n{'='*80}")
-                print(f"[TTS] Fetched {len(sensor_data_list)} data points from Node 7")
+                print(f"[TTS] Fetched {len(sensor_data_list)} data points from Nodes 1, 6, and 7")
                 print(f"{'='*80}")
                 if sensor_data_list:
-                    print(f"First data point: {sensor_data_list[0].timestamp} - Temp: {sensor_data_list[0].temperature}°C")
-                    print(f"Last data point:  {sensor_data_list[-1].timestamp} - Temp: {sensor_data_list[-1].temperature}°C")
+                    print(f"First data point: {sensor_data_list[0].timestamp} - Temp: {sensor_data_list[0].temperature}°C - Device: {sensor_data_list[0].device_id}")
+                    print(f"Last data point:  {sensor_data_list[-1].timestamp} - Temp: {sensor_data_list[-1].temperature}°C - Device: {sensor_data_list[-1].device_id}")
                     print(f"\nAll temperature readings:")
                     for i, data in enumerate(sensor_data_list, 1):
-                        print(f"  {i:3d}. {data.timestamp} | Temp: {data.temperature:5.1f}°C | Humidity: {data.humidity:5.1f}% | Wind: {data.wind_speed:5.1f} m/s")
+                        print(f"  {i:3d}. {data.timestamp} | Device: {data.device_id:16s} | Temp: {data.temperature:5.1f}°C | Humidity: {data.humidity:5.1f}% | Wind: {data.wind_speed:5.1f} m/s")
                 print(f"{'='*80}\n")
 
                 return sensor_data_list
