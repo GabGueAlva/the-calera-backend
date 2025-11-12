@@ -1,3 +1,3 @@
-from .database import SensorDatabase
+from .postgres_database import PostgresSensorDatabase
 
-__all__ = ['SensorDatabase']
+__all__ = ['PostgresSensorDatabase']

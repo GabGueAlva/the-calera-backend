@@ -3,13 +3,13 @@ from typing import List
 from domain.entities.sensor_data import SensorData
 from domain.repositories.sensor_data_repository import SensorDataRepository
 from domain.value_objects.time_range import TimeRange
-from infrastructure.database.database import SensorDatabase
+from infrastructure.database.postgres_database import PostgresSensorDatabase
 
 
 class DatabaseSensorDataRepository(SensorDataRepository):
-    """Repository that stores and retrieves sensor data from SQLite database"""
+    """Repository that stores and retrieves sensor data from PostgreSQL database"""
 
-    def __init__(self, database: SensorDatabase):
+    def __init__(self, database: PostgresSensorDatabase):
         self.database = database
 
     async def get_sensor_data_in_range(self, time_range: TimeRange) -> List[SensorData]:
