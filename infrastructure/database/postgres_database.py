@@ -32,7 +32,7 @@ class PostgresSensorDatabase:
 
         try:
             with self._get_connection() as conn:
-            with conn.cursor() as cursor:
+                with conn.cursor() as cursor:
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS sensor_data (
                         id TEXT PRIMARY KEY,
