@@ -40,14 +40,21 @@ class GenerateFrostPredictionUseCase:
         sarima_probability = await self.sarima_service.predict_frost_probability(sensor_data)
         print(f"[PREDICTION] ✓ SARIMA probability: {sarima_probability:.2%}\n")
 
-        print("[PREDICTION] Step 3: Running LSTM model prediction...")
-        lstm_probability = await self.lstm_service.predict_frost_probability(sensor_data)
-        print(f"[PREDICTION] ✓ LSTM probability: {lstm_probability:.2%}\n")
+        # TEMPORARY: Skip LSTM if disabled (memory testing)
+        if self.lstm_service is not None:
+            print("[PREDICTION] Step 3: Running LSTM model prediction...")
+            lstm_probability = await self.lstm_service.predict_frost_probability(sensor_data)
+            print(f"[PREDICTION] ✓ LSTM probability: {lstm_probability:.2%}\n")
 
-        hybrid_probability = (sarima_probability * 0.4) + (lstm_probability * 0.6)
-        print("[PREDICTION] Step 4: Calculating hybrid prediction...")
-        print(f"[PREDICTION] Hybrid formula: (SARIMA * 0.4) + (LSTM * 0.6)")
-        print(f"[PREDICTION] ✓ Hybrid probability: {hybrid_probability:.2%}\n")
+            hybrid_probability = (sarima_probability * 0.4) + (lstm_probability * 0.6)
+            print("[PREDICTION] Step 4: Calculating hybrid prediction...")
+            print(f"[PREDICTION] Hybrid formula: (SARIMA * 0.4) + (LSTM * 0.6)")
+            print(f"[PREDICTION] ✓ Hybrid probability: {hybrid_probability:.2%}\n")
+        else:
+            print("[PREDICTION] Step 3: LSTM model DISABLED (using SARIMA only for memory testing)")
+            lstm_probability = sarima_probability  # Fallback to SARIMA
+            hybrid_probability = sarima_probability
+            print(f"[PREDICTION] ✓ Using SARIMA-only probability: {hybrid_probability:.2%}\n")
 
         frost_level = Prediction.determine_frost_level(hybrid_probability)
 
