@@ -10,7 +10,7 @@ from domain.entities.sensor_data import SensorData
 class PostgresSensorDatabase:
     def __init__(self, database_url: str):
         self.database_url = database_url
-        self._initialize_database()
+        self._initialized = False
 
     @contextmanager
     def _get_connection(self):
@@ -27,7 +27,11 @@ class PostgresSensorDatabase:
 
     def _initialize_database(self):
         """Create the sensor_data table if it doesn't exist"""
-        with self._get_connection() as conn:
+        if self._initialized:
+            return
+
+        try:
+            with self._get_connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS sensor_data (
@@ -53,8 +57,15 @@ class PostgresSensorDatabase:
                     ON sensor_data(device_id)
                 """)
 
+                self._initialized = True
+                print("[DATABASE] PostgreSQL tables initialized successfully")
+        except Exception as e:
+            print(f"[DATABASE] Warning: Could not initialize database: {e}")
+            print("[DATABASE] Will retry on first database operation")
+
     def save_sensor_data(self, sensor_data: SensorData) -> None:
         """Save a single sensor data point to the database"""
+        self._initialize_database()  # Ensure DB is initialized
         with self._get_connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute("""
