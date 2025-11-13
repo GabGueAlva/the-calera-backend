@@ -33,32 +33,32 @@ class PostgresSensorDatabase:
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS sensor_data (
-                        id TEXT PRIMARY KEY,
-                        device_id TEXT NOT NULL,
-                        temperature REAL NOT NULL,
-                        humidity REAL NOT NULL,
-                        wind_speed REAL NOT NULL,
-                        timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
-                        created_at TIMESTAMP WITH TIME ZONE NOT NULL
-                    )
-                """)
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS sensor_data (
+                            id TEXT PRIMARY KEY,
+                            device_id TEXT NOT NULL,
+                            temperature REAL NOT NULL,
+                            humidity REAL NOT NULL,
+                            wind_speed REAL NOT NULL,
+                            timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+                            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+                        )
+                    """)
 
-                # Create index on timestamp for faster queries
-                cursor.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_timestamp
-                    ON sensor_data(timestamp)
-                """)
+                    # Create index on timestamp for faster queries
+                    cursor.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_timestamp
+                        ON sensor_data(timestamp)
+                    """)
 
-                # Create index on device_id for filtering
-                cursor.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_device_id
-                    ON sensor_data(device_id)
-                """)
+                    # Create index on device_id for filtering
+                    cursor.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_device_id
+                        ON sensor_data(device_id)
+                    """)
 
-                self._initialized = True
-                print("[DATABASE] PostgreSQL tables initialized successfully")
+                    self._initialized = True
+                    print("[DATABASE] PostgreSQL tables initialized successfully")
         except Exception as e:
             print(f"[DATABASE] Warning: Could not initialize database: {e}")
             print("[DATABASE] Will retry on first database operation")
