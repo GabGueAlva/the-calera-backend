@@ -10,11 +10,21 @@ from interfaces.middleware.logging_middleware import LoggingMiddleware
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    print("[STARTUP] Initializing application...")
+
+    # Try to pre-initialize database (don't block if it fails)
+    try:
+        print("[STARTUP] Pre-warming database connection...")
+        dependencies.sensor_database._initialize_database()
+    except Exception as e:
+        print(f"[STARTUP] Database pre-warm skipped: {e}")
+
     scheduler = FrostPredictionScheduler(
         dependencies.prediction_service,
         dependencies.sensor_data_service
     )
     scheduler.start()
+    print("[STARTUP] Application ready!")
 
     yield
 
