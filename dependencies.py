@@ -15,8 +15,7 @@ from infrastructure.repositories.memory_prediction_repository import MemoryPredi
 from infrastructure.repositories.json_farmer_repository import JSONFarmerRepository
 from infrastructure.database.postgres_database import PostgresSensorDatabase
 from infrastructure.models.sarima_model import SARIMAModelService
-# TEMPORARY: LSTM commented out to test memory usage - DO NOT DELETE, re-enable after testing
-# from infrastructure.models.lstm_model import LSTMModelService
+from infrastructure.models.lstm_model import LSTMModelService
 from infrastructure.config.settings import settings
 
 from interfaces.controllers.webhook_controller import WebhookController
@@ -48,9 +47,7 @@ class DependencyContainer:
         
         # ML Models
         self.sarima_service = SARIMAModelService()
-        # TEMPORARY: LSTM disabled to test memory - DO NOT DELETE
-        # self.lstm_service = LSTMModelService()
-        self.lstm_service = None  # Placeholder
+        self.lstm_service = LSTMModelService()
         
         # Services
         self.notification_service = TwilioNotificationService(self.twilio_client)
