@@ -12,12 +12,8 @@ async def lifespan(app: FastAPI):
     # Startup
     print("[STARTUP] Initializing application...")
 
-    # Try to pre-initialize database (don't block if it fails)
-    try:
-        print("[STARTUP] Pre-warming database connection...")
-        dependencies.sensor_database._initialize_database()
-    except Exception as e:
-        print(f"[STARTUP] Database pre-warm skipped: {e}")
+    # Database will initialize lazily on first request to avoid startup timeout
+    print("[STARTUP] Database will initialize on first request")
 
     scheduler = FrostPredictionScheduler(
         dependencies.prediction_service,

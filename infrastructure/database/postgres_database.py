@@ -157,6 +157,49 @@ class PostgresSensorDatabase:
 
                 return cursor.fetchone()[0]
 
+    def get_all_sensor_data(self, device_id: Optional[str] = None, limit: Optional[int] = None) -> List[SensorData]:
+        """
+        Get all sensor data from the database
+
+        Args:
+            device_id: Optional device ID to filter by
+            limit: Optional limit on number of records to return
+
+        Returns:
+            List of all SensorData objects ordered by timestamp descending (newest first)
+        """
+        with self._get_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                if device_id:
+                    if limit:
+                        cursor.execute("""
+                            SELECT * FROM sensor_data
+                            WHERE device_id = %s
+                            ORDER BY timestamp DESC
+                            LIMIT %s
+                        """, (device_id, limit))
+                    else:
+                        cursor.execute("""
+                            SELECT * FROM sensor_data
+                            WHERE device_id = %s
+                            ORDER BY timestamp DESC
+                        """, (device_id,))
+                else:
+                    if limit:
+                        cursor.execute("""
+                            SELECT * FROM sensor_data
+                            ORDER BY timestamp DESC
+                            LIMIT %s
+                        """, (limit,))
+                    else:
+                        cursor.execute("""
+                            SELECT * FROM sensor_data
+                            ORDER BY timestamp DESC
+                        """)
+
+                rows = cursor.fetchall()
+                return [self._row_to_sensor_data(dict(row)) for row in rows]
+
     def _row_to_sensor_data(self, row) -> SensorData:
         """Convert a database row to a SensorData entity"""
         return SensorData(

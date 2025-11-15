@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
 
 from domain.repositories.sensor_data_repository import SensorDataRepository
 from domain.value_objects.time_range import TimeRange
-from application.dtos.sensor_data_dto import SensorDataDTO, LatestSensorDataResponse
+from application.dtos.sensor_data_dto import SensorDataDTO, LatestSensorDataResponse, AllSensorDataResponse
 
 
 class SensorDataService:
@@ -71,3 +71,45 @@ class SensorDataService:
             data=self._cached_sensor_data,
             last_updated=self._last_updated or datetime.utcnow()
         )
+
+    def get_all_sensor_data(self, device_id: Optional[str] = None, limit: Optional[int] = None) -> AllSensorDataResponse:
+        """
+        Get all sensor data from the database.
+        This fetches directly from Supabase without caching.
+
+        Args:
+            device_id: Optional device ID to filter by
+            limit: Optional limit on number of records to return
+
+        Returns:
+            AllSensorDataResponse with all sensor data from the database
+        """
+        try:
+            print(f"[SENSOR SERVICE] Fetching all sensor data from database (device_id={device_id}, limit={limit})...")
+
+            # Fetch all sensor data from the repository (which gets it from Supabase)
+            sensor_readings = self.sensor_data_repository.get_all_sensor_data(device_id=device_id, limit=limit)
+
+            # Convert SensorData entities to DTOs
+            sensor_data_dtos = [
+                SensorDataDTO(
+                    temperature=reading.temperature,
+                    humidity=reading.humidity,
+                    wind_speed=reading.wind_speed,
+                    timestamp=reading.timestamp,
+                    device_id=reading.device_id
+                )
+                for reading in sensor_readings
+            ]
+
+            print(f"[SENSOR SERVICE] Retrieved {len(sensor_data_dtos)} sensor data records from database")
+
+            return AllSensorDataResponse(
+                status="success",
+                data=sensor_data_dtos,
+                total_records=len(sensor_data_dtos)
+            )
+
+        except Exception as e:
+            print(f"[SENSOR SERVICE] Error fetching all sensor data: {e}")
+            raise ValueError(f"Failed to retrieve sensor data from database: {str(e)}")

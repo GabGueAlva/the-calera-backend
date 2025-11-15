@@ -1,11 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Query
 from typing import Optional, List
 from pydantic import BaseModel
 
 from application.services.prediction_service import PredictionService
 from application.services.sensor_data_service import SensorDataService
 from application.dtos.prediction_dto import PredictionDTO
-from application.dtos.sensor_data_dto import LatestSensorDataResponse
+from application.dtos.sensor_data_dto import LatestSensorDataResponse, AllSensorDataResponse
 
 
 # Removed SendAlertRequest - endpoint no longer accepts phone numbers from frontend
@@ -34,6 +34,12 @@ class PredictionController:
             self.get_sensor_data,
             methods=["GET"],
             response_model=LatestSensorDataResponse
+        )
+        self.router.add_api_route(
+            "/sensor-data/all",
+            self.get_all_sensor_data,
+            methods=["GET"],
+            response_model=AllSensorDataResponse
         )
 
     async def generate_prediction(self) -> PredictionDTO:
@@ -105,3 +111,33 @@ class PredictionController:
         except Exception as e:
             print(f"Error retrieving sensor data: {e}")
             raise HTTPException(status_code=500, detail="Failed to retrieve sensor data")
+
+    def get_all_sensor_data(
+        self,
+        device_id: Optional[str] = Query(None, description="Filter by device ID"),
+        limit: Optional[int] = Query(None, description="Limit number of records returned")
+    ) -> AllSensorDataResponse:
+        """
+        Get all sensor data from Supabase database.
+
+        This endpoint retrieves all historical sensor data directly from the database.
+        You can optionally filter by device_id and limit the number of records.
+
+        Query Parameters:
+        - device_id: Optional device ID to filter results
+        - limit: Optional limit on number of records to return (returns most recent records)
+        """
+        try:
+            if self.sensor_data_service is None:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Sensor data service not configured"
+                )
+
+            return self.sensor_data_service.get_all_sensor_data(device_id=device_id, limit=limit)
+
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            print(f"Error retrieving all sensor data: {e}")
+            raise HTTPException(status_code=500, detail="Failed to retrieve all sensor data")

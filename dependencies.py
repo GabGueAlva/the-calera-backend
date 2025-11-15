@@ -12,8 +12,9 @@ from infrastructure.external.twilio_notification_service import TwilioNotificati
 from infrastructure.repositories.tts_sensor_data_repository import TTSSensorDataRepository
 from infrastructure.repositories.database_sensor_data_repository import DatabaseSensorDataRepository
 from infrastructure.repositories.memory_prediction_repository import MemoryPredictionRepository
-from infrastructure.repositories.json_farmer_repository import JSONFarmerRepository
+from infrastructure.repositories.database_farmer_repository import DatabaseFarmerRepository
 from infrastructure.database.postgres_database import PostgresSensorDatabase
+from infrastructure.database.postgres_farmer_database import PostgresFarmerDatabase
 from infrastructure.models.sarima_model import SARIMAModelService
 from infrastructure.models.lstm_model import LSTMModelService
 from infrastructure.config.settings import settings
@@ -38,12 +39,13 @@ class DependencyContainer:
 
         print("[DATABASE] Using PostgreSQL database from DATABASE_URL")
         self.sensor_database = PostgresSensorDatabase(database_url=settings.database_url)
+        self.farmer_database = PostgresFarmerDatabase(database_url=settings.database_url)
 
         # Repositories
         # Use database repository for sensor data storage
         self.sensor_data_repository = DatabaseSensorDataRepository(self.sensor_database)
         self.prediction_repository = MemoryPredictionRepository()
-        self.farmer_repository = JSONFarmerRepository()  # Stores farmers in data/farmers.json
+        self.farmer_repository = DatabaseFarmerRepository(self.farmer_database)  # Stores farmers in Supabase
         
         # ML Models
         self.sarima_service = SARIMAModelService()
