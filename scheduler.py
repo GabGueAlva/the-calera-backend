@@ -1,7 +1,7 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.date import DateTrigger
-from datetime import datetime, timedelta
+from datetime import datetime
+import pytz
 
 from application.services.prediction_service import PredictionService
 from application.services.sensor_data_service import SensorDataService
@@ -11,7 +11,9 @@ class FrostPredictionScheduler:
     def __init__(self, prediction_service: PredictionService, sensor_data_service: SensorDataService = None):
         self.prediction_service = prediction_service
         self.sensor_data_service = sensor_data_service
-        self.scheduler = AsyncIOScheduler()
+        # Set timezone to Colombia (UTC-5)
+        self.colombia_tz = pytz.timezone('America/Bogota')
+        self.scheduler = AsyncIOScheduler(timezone=self.colombia_tz)
 
     async def run_prediction_job(self):
         try:
@@ -52,22 +54,12 @@ class FrostPredictionScheduler:
             print(f"Error updating sensor data: {e}")
 
     def start(self):
-        # TEST: Run prediction in 2 minutes from now (one-time job for production testing)
-        run_time = datetime.now() + timedelta(minutes=2)
-        self.scheduler.add_job(
-            self.run_prediction_job,
-            DateTrigger(run_date=run_time),
-            id="prediction_test_immediate",
-            misfire_grace_time=600
-        )
-        print(f"🧪 TEST: One-time prediction scheduled for {run_time.strftime('%H:%M:%S')}")
-
-        # Schedule prediction jobs at 3:00 AM, 12:00 PM, and 4:00 PM
+        # Schedule prediction jobs at 3:00 AM, 12:00 PM, and 4:00 PM (Colombia time)
         self.scheduler.add_job(
             self.run_prediction_job,
             CronTrigger(hour=3, minute=0),
             id="prediction_3am",
-            misfire_grace_time=30,  # Allow 30 seconds delay
+            misfire_grace_time=600,  # Allow up to 10 minutes delay for long predictions
             coalesce=True  # Combine missed executions
         )
 
