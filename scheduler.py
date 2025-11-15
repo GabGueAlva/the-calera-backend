@@ -52,7 +52,7 @@ class FrostPredictionScheduler:
             print(f"Error updating sensor data: {e}")
 
     def start(self):
-        # TEST: Run prediction in 2 minutes from now (one-time job)
+        # TEST: Run prediction in 2 minutes from now (one-time job for production testing)
         run_time = datetime.now() + timedelta(minutes=2)
         self.scheduler.add_job(
             self.run_prediction_job,
@@ -62,22 +62,13 @@ class FrostPredictionScheduler:
         )
         print(f"🧪 TEST: One-time prediction scheduled for {run_time.strftime('%H:%M:%S')}")
 
-        # Schedule prediction jobs at 3:00 AM, 10:00 AM, 12:00 PM, and 4:00 PM
+        # Schedule prediction jobs at 3:00 AM, 12:00 PM, and 4:00 PM
         self.scheduler.add_job(
             self.run_prediction_job,
             CronTrigger(hour=3, minute=0),
             id="prediction_3am",
             misfire_grace_time=30,  # Allow 30 seconds delay
             coalesce=True  # Combine missed executions
-        )
-
-        # TEST: Prediction at 10:25 AM
-        self.scheduler.add_job(
-            self.run_prediction_job,
-            CronTrigger(hour=10, minute=25),
-            id="prediction_10am",
-            misfire_grace_time=600,  # Allow up to 10 minutes delay (for long-running predictions)
-            coalesce=True
         )
 
         self.scheduler.add_job(
@@ -122,7 +113,6 @@ class FrostPredictionScheduler:
         print("="*70)
         print("📅 Prediction Jobs:")
         print("   • 03:00 AM - Morning prediction")
-        print("   • 10:25 AM - TEST prediction (can take up to 10 minutes)")
         print("   • 12:00 PM - Midday prediction")
         print("   • 04:00 PM - Afternoon prediction")
         print("\n📱 Alert Job:")
