@@ -25,12 +25,14 @@ class SARIMAModelService(MLModelService):
             }
             for data in sensor_data
         ])
-        
+
         df = df.sort_values('timestamp')
         df.set_index('timestamp', inplace=True)
-        
-        df = df.resample('5T').mean().interpolate()
-        
+
+        # Resample to 15-minute intervals instead of 5-minute to reduce memory usage
+        # This reduces data points by 3x while maintaining pattern accuracy
+        df = df.resample('15T').mean().interpolate()
+
         return df['temperature']
 
     def _train_model_sync(self, sensor_data: List[SensorData]) -> None:
@@ -41,7 +43,7 @@ class SARIMAModelService(MLModelService):
         print("[SARIMA] Preparing temperature data for training...")
         print("="*60)
 
-        if len(sensor_data) < 72:  # At least 72 data points for seasonal period
+        if len(sensor_data) < 50:  # At least ~3 hours of data
             raise ValueError("Insufficient data for SARIMA training")
 
         start_time = time.time()
@@ -50,15 +52,15 @@ class SARIMAModelService(MLModelService):
         print(f"[SARIMA] Data preparation took {time.time() - start_time:.2f} seconds")
 
         try:
-            print(f"[SARIMA] Building SARIMAX model with order=(0,0,1) seasonal=(0,1,2,72)...")
+            print(f"[SARIMA] Building SARIMAX model with order=(0,0,1) seasonal=(0,1,1,24)...")
             model_start = time.time()
 
-            # Optimized model parameters (seasonal period = 72 = 6 hours of 5-min intervals)
-            # Reduced for production performance while maintaining accuracy
+            # Optimized for production: 15-min intervals, 24 periods = 6 hours
+            # Simplified seasonal order (0,1,1) instead of (0,1,2) to reduce complexity
             self.model = SARIMAX(
                 temperature_series,
                 order=(0, 0, 1),
-                seasonal_order=(0, 1, 2, 72),
+                seasonal_order=(0, 1, 1, 24),  # 24 * 15min = 6 hours
                 enforce_stationarity=False,
                 enforce_invertibility=False
             )
