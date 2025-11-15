@@ -16,11 +16,25 @@ class FrostPredictionScheduler:
 
     async def run_prediction_job(self):
         try:
-            print(f"Running prediction job at {datetime.now()}")
+            print(f"\n{'='*60}")
+            print(f"⏰ Running prediction job at {datetime.now()}")
+            print(f"{'='*60}\n")
+
+            # Prediction can take up to 10 minutes, so we wait patiently
             prediction = await self.prediction_service.generate_prediction()
-            print(f"Prediction generated: {prediction.probability:.2%} frost probability")
+
+            print(f"\n{'='*60}")
+            print(f"✅ Prediction completed successfully!")
+            print(f"   Frost probability: {prediction.probability:.2%}")
+            print(f"   Frost level: {prediction.frost_level.value}")
+            print(f"   Completed at: {datetime.now()}")
+            print(f"{'='*60}\n")
         except Exception as e:
-            print(f"Error in prediction job: {e}")
+            print(f"\n{'='*60}")
+            print(f"❌ Error in prediction job: {e}")
+            print(f"{'='*60}\n")
+            import traceback
+            traceback.print_exc()
 
     async def send_daily_alert_job(self):
         try:
@@ -39,7 +53,7 @@ class FrostPredictionScheduler:
             print(f"Error updating sensor data: {e}")
 
     def start(self):
-        # Schedule prediction jobs at 3:00 AM, 12:00 PM, and 4:00 PM
+        # Schedule prediction jobs at 3:00 AM, 10:00 AM, 12:00 PM, and 4:00 PM
         self.scheduler.add_job(
             self.run_prediction_job,
             CronTrigger(hour=3, minute=0),
@@ -48,11 +62,20 @@ class FrostPredictionScheduler:
             coalesce=True  # Combine missed executions
         )
 
+        # TEST: Prediction at 10:00 AM
+        self.scheduler.add_job(
+            self.run_prediction_job,
+            CronTrigger(hour=10, minute=0),
+            id="prediction_10am",
+            misfire_grace_time=600,  # Allow up to 10 minutes delay (for long-running predictions)
+            coalesce=True
+        )
+
         self.scheduler.add_job(
             self.run_prediction_job,
             CronTrigger(hour=12, minute=0),
             id="prediction_12pm",
-            misfire_grace_time=30,
+            misfire_grace_time=600,  # Allow up to 10 minutes delay
             coalesce=True
         )
 
@@ -60,7 +83,7 @@ class FrostPredictionScheduler:
             self.run_prediction_job,
             CronTrigger(hour=16, minute=0),
             id="prediction_4pm",
-            misfire_grace_time=30,
+            misfire_grace_time=600,  # Allow up to 10 minutes delay
             coalesce=True
         )
 
@@ -82,10 +105,23 @@ class FrostPredictionScheduler:
                 misfire_grace_time=60,  # Allow up to 60 seconds delay for sensor updates
                 coalesce=True  # If multiple executions are missed, only run once
             )
-            print("Sensor data updates scheduled every 5 minutes")
 
         self.scheduler.start()
-        print("Scheduler started successfully")
+
+        print("\n" + "="*70)
+        print("⏰ SCHEDULER STARTED SUCCESSFULLY")
+        print("="*70)
+        print("📅 Prediction Jobs:")
+        print("   • 03:00 AM - Morning prediction")
+        print("   • 10:00 AM - TEST prediction (can take up to 10 minutes)")
+        print("   • 12:00 PM - Midday prediction")
+        print("   • 04:00 PM - Afternoon prediction")
+        print("\n📱 Alert Job:")
+        print("   • 05:00 PM - Daily WhatsApp alert")
+        if self.sensor_data_service:
+            print("\n🌡️  Sensor Data Updates:")
+            print("   • Every 5 minutes - Fetch latest sensor data from TTS")
+        print("="*70 + "\n")
 
     def stop(self):
         self.scheduler.shutdown()
