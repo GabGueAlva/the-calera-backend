@@ -1,6 +1,7 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from datetime import datetime
+from apscheduler.triggers.date import DateTrigger
+from datetime import datetime, timedelta
 
 from application.services.prediction_service import PredictionService
 from application.services.sensor_data_service import SensorDataService
@@ -51,6 +52,16 @@ class FrostPredictionScheduler:
             print(f"Error updating sensor data: {e}")
 
     def start(self):
+        # TEST: Run prediction in 2 minutes from now (one-time job)
+        run_time = datetime.now() + timedelta(minutes=2)
+        self.scheduler.add_job(
+            self.run_prediction_job,
+            DateTrigger(run_date=run_time),
+            id="prediction_test_immediate",
+            misfire_grace_time=600
+        )
+        print(f"🧪 TEST: One-time prediction scheduled for {run_time.strftime('%H:%M:%S')}")
+
         # Schedule prediction jobs at 3:00 AM, 10:00 AM, 12:00 PM, and 4:00 PM
         self.scheduler.add_job(
             self.run_prediction_job,
