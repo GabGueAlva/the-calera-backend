@@ -41,7 +41,7 @@ class SARIMAModelService(MLModelService):
         print("[SARIMA] Preparing temperature data for training...")
         print("="*60)
 
-        if len(sensor_data) < 144:  # At least 1 day of 5-minute intervals
+        if len(sensor_data) < 100:  # At least 100 data points for seasonal period
             raise ValueError("Insufficient data for SARIMA training")
 
         start_time = time.time()
@@ -50,27 +50,23 @@ class SARIMAModelService(MLModelService):
         print(f"[SARIMA] Data preparation took {time.time() - start_time:.2f} seconds")
 
         try:
-            print(f"[SARIMA] Building SARIMAX model with order=(0,0,1) seasonal=(0,1,2,144)...")
+            print(f"[SARIMA] Building SARIMAX model with order=(0,0,1) seasonal=(0,1,2,100)...")
             model_start = time.time()
 
+            # Optimized model parameters (seasonal period reduced from 144 to 100 for faster training)
             self.model = SARIMAX(
                 temperature_series,
                 order=(0, 0, 1),
-                seasonal_order=(0, 1, 2, 144),
+                seasonal_order=(0, 1, 2, 100),
                 enforce_stationarity=False,
                 enforce_invertibility=False
             )
             print(f"[SARIMA] Model structure created in {time.time() - model_start:.2f} seconds")
-            print(f"[SARIMA] Starting model fitting (may take 2-5 minutes in production)...")
+            print(f"[SARIMA] Starting model fitting (this will take 5-10 minutes on first run)...")
             print("-"*60)
 
             fit_start = time.time()
-            # Add timeout handling with maxiter
-            self.fitted_model = self.model.fit(
-                disp=False,
-                maxiter=50,  # Limit iterations to speed up
-                method='lbfgs'  # Faster optimization method
-            )
+            self.fitted_model = self.model.fit(disp=False)
             fit_time = time.time() - fit_start
             self.is_trained = True
 

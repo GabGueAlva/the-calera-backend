@@ -25,7 +25,7 @@ class FrostPredictionScheduler:
             print(f"\n{'='*60}")
             print(f"✅ Prediction completed successfully!")
             print(f"   Frost probability: {prediction.probability:.2%}")
-            print(f"   Frost level: {prediction.frost_level.value}")
+            print(f"   Frost level: {prediction.frost_level}")
             print(f"   Completed at: {datetime.now()}")
             print(f"{'='*60}\n")
         except Exception as e:

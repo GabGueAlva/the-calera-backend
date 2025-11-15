@@ -11,6 +11,11 @@ class PostgresSensorDatabase:
     def __init__(self, database_url: str):
         self.database_url = database_url
         self._initialized = False
+        # Add connection timeout to prevent hanging
+        if '?' in self.database_url:
+            self.database_url += '&connect_timeout=10'
+        else:
+            self.database_url += '?connect_timeout=10'
 
     @contextmanager
     def _get_connection(self):
