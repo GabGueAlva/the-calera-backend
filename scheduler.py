@@ -43,26 +43,34 @@ class FrostPredictionScheduler:
         self.scheduler.add_job(
             self.run_prediction_job,
             CronTrigger(hour=3, minute=0),
-            id="prediction_3am"
+            id="prediction_3am",
+            misfire_grace_time=30,  # Allow 30 seconds delay
+            coalesce=True  # Combine missed executions
         )
-        
+
         self.scheduler.add_job(
             self.run_prediction_job,
             CronTrigger(hour=12, minute=0),
-            id="prediction_12pm"
+            id="prediction_12pm",
+            misfire_grace_time=30,
+            coalesce=True
         )
-        
+
         self.scheduler.add_job(
             self.run_prediction_job,
             CronTrigger(hour=16, minute=0),
-            id="prediction_4pm"
+            id="prediction_4pm",
+            misfire_grace_time=30,
+            coalesce=True
         )
-        
+
         # Schedule daily alert at 5:00 PM
         self.scheduler.add_job(
             self.send_daily_alert_job,
             CronTrigger(hour=17, minute=0),
-            id="daily_alert_5pm"
+            id="daily_alert_5pm",
+            misfire_grace_time=30,
+            coalesce=True
         )
 
         # Schedule sensor data updates every 5 minutes
@@ -70,7 +78,9 @@ class FrostPredictionScheduler:
             self.scheduler.add_job(
                 self.update_sensor_data_job,
                 CronTrigger(minute="*/5"),  # Every 5 minutes
-                id="sensor_data_update"
+                id="sensor_data_update",
+                misfire_grace_time=60,  # Allow up to 60 seconds delay for sensor updates
+                coalesce=True  # If multiple executions are missed, only run once
             )
             print("Sensor data updates scheduled every 5 minutes")
 
