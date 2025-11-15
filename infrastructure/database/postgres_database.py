@@ -104,23 +104,48 @@ class PostgresSensorDatabase:
         Returns:
             List of SensorData objects
         """
-        with self._get_connection() as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                if device_id:
-                    cursor.execute("""
-                        SELECT * FROM sensor_data
-                        WHERE timestamp >= %s AND timestamp <= %s AND device_id = %s
-                        ORDER BY timestamp ASC
-                    """, (start_time, end_time, device_id))
-                else:
-                    cursor.execute("""
-                        SELECT * FROM sensor_data
-                        WHERE timestamp >= %s AND timestamp <= %s
-                        ORDER BY timestamp ASC
-                    """, (start_time, end_time))
+        import time
+        query_start = time.time()
+        print(f"[DATABASE] Querying sensor data from {start_time} to {end_time}...")
 
-                rows = cursor.fetchall()
-                return [self._row_to_sensor_data(dict(row)) for row in rows]
+        try:
+            with self._get_connection() as conn:
+                conn_time = time.time()
+                print(f"[DATABASE] Connection established in {conn_time - query_start:.2f}s")
+
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor_time = time.time()
+
+                    if device_id:
+                        cursor.execute("""
+                            SELECT * FROM sensor_data
+                            WHERE timestamp >= %s AND timestamp <= %s AND device_id = %s
+                            ORDER BY timestamp ASC
+                        """, (start_time, end_time, device_id))
+                    else:
+                        cursor.execute("""
+                            SELECT * FROM sensor_data
+                            WHERE timestamp >= %s AND timestamp <= %s
+                            ORDER BY timestamp ASC
+                        """, (start_time, end_time))
+
+                    execute_time = time.time()
+                    print(f"[DATABASE] Query executed in {execute_time - cursor_time:.2f}s")
+
+                    rows = cursor.fetchall()
+                    fetch_time = time.time()
+                    print(f"[DATABASE] Fetched {len(rows)} rows in {fetch_time - execute_time:.2f}s")
+
+                    result = [self._row_to_sensor_data(dict(row)) for row in rows]
+                    total_time = time.time() - query_start
+                    print(f"[DATABASE] ✓ Total query time: {total_time:.2f}s")
+                    return result
+
+        except Exception as e:
+            print(f"[DATABASE] ✗ Error after {time.time() - query_start:.2f}s: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     def get_latest_sensor_data(self, device_id: Optional[str] = None) -> Optional[SensorData]:
         """Get the most recent sensor data point"""
