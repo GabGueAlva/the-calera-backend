@@ -60,10 +60,10 @@ class FrostPredictionScheduler:
             coalesce=True  # Combine missed executions
         )
 
-        # TEST: Prediction at 10:10 AM
+        # TEST: Prediction at 10:25 AM
         self.scheduler.add_job(
             self.run_prediction_job,
-            CronTrigger(hour=10, minute=10),
+            CronTrigger(hour=10, minute=25),
             id="prediction_10am",
             misfire_grace_time=600,  # Allow up to 10 minutes delay (for long-running predictions)
             coalesce=True
@@ -111,7 +111,7 @@ class FrostPredictionScheduler:
         print("="*70)
         print("📅 Prediction Jobs:")
         print("   • 03:00 AM - Morning prediction")
-        print("   • 10:10 AM - TEST prediction (can take up to 10 minutes)")
+        print("   • 10:25 AM - TEST prediction (can take up to 10 minutes)")
         print("   • 12:00 PM - Midday prediction")
         print("   • 04:00 PM - Afternoon prediction")
         print("\n📱 Alert Job:")
