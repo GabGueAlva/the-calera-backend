@@ -35,6 +35,8 @@ class SARIMAModelService(MLModelService):
 
     def _train_model_sync(self, sensor_data: List[SensorData]) -> None:
         """Synchronous training method to run in thread pool"""
+        import time
+
         print("\n" + "="*60)
         print("[SARIMA] Preparing temperature data for training...")
         print("="*60)
@@ -42,11 +44,15 @@ class SARIMAModelService(MLModelService):
         if len(sensor_data) < 144:  # At least 1 day of 5-minute intervals
             raise ValueError("Insufficient data for SARIMA training")
 
+        start_time = time.time()
         temperature_series = self._prepare_data(sensor_data)
         print(f"[SARIMA] Temperature series prepared: {len(temperature_series)} data points")
+        print(f"[SARIMA] Data preparation took {time.time() - start_time:.2f} seconds")
 
         try:
             print(f"[SARIMA] Building SARIMAX model with order=(0,0,1) seasonal=(0,1,2,144)...")
+            model_start = time.time()
+
             self.model = SARIMAX(
                 temperature_series,
                 order=(0, 0, 1),
@@ -54,19 +60,29 @@ class SARIMAModelService(MLModelService):
                 enforce_stationarity=False,
                 enforce_invertibility=False
             )
-            print(f"[SARIMA] Model structure created")
-            print(f"[SARIMA] Starting model fitting (this will take 20-40 seconds)...")
+            print(f"[SARIMA] Model structure created in {time.time() - model_start:.2f} seconds")
+            print(f"[SARIMA] Starting model fitting (may take 2-5 minutes in production)...")
             print("-"*60)
 
-            self.fitted_model = self.model.fit(disp=False)
+            fit_start = time.time()
+            # Add timeout handling with maxiter
+            self.fitted_model = self.model.fit(
+                disp=False,
+                maxiter=50,  # Limit iterations to speed up
+                method='lbfgs'  # Faster optimization method
+            )
+            fit_time = time.time() - fit_start
             self.is_trained = True
 
             print("-"*60)
-            print("[SARIMA] ✓ Model fitting completed successfully!")
+            print(f"[SARIMA] ✓ Model fitting completed in {fit_time:.2f} seconds!")
+            print(f"[SARIMA] Total training time: {time.time() - start_time:.2f} seconds")
             print("="*60 + "\n")
 
         except Exception as e:
-            print(f"[SARIMA] ✗ Error training model: {e}")
+            print(f"[SARIMA] ✗ Error training model after {time.time() - start_time:.2f} seconds: {e}")
+            import traceback
+            traceback.print_exc()
             raise
 
     async def train_model(self, sensor_data: List[SensorData]) -> None:
